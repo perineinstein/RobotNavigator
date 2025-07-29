@@ -1,65 +1,57 @@
-name: Build Kivy APK
+name: Build APK with Buildozer
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build APK with Buildozer
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    - name: Check out repository
+      uses: actions/checkout@v4
 
-    - name: Install Linux dependencies
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y \
           libgstreamer1.0-dev \
           libgstreamer-plugins-base1.0-dev \
-          xclip xsel \
           libffi-dev libssl-dev \
           libgl1-mesa-dev libgles2-mesa-dev \
           libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
           libmtdev-dev libjpeg-dev libfreetype6-dev \
           libavcodec-dev libavformat-dev libswscale-dev \
           libusb-dev libhidapi-dev zlib1g-dev \
-          build-essential autoconf automake cmake pkg-config unzip
+          xclip xsel \
+          build-essential autoconf automake cmake pkg-config unzip git
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-
-    - name: Install dependencies
+    - name: Install buildozer and Cython
       run: |
-        sudo apt update
-        sudo apt install -y zip unzip openjdk-17-jdk python3-pip python3-setuptools python3-wheel git-core \
-                            build-essential autoconf automake libtool pkg-config zlib1g-dev \
-                            libc6-dev libncurses5-dev libstdc++6 libffi-dev libssl-dev ccache \
-                            libsqlite3-dev libjpeg-dev libfreetype6-dev libpng-dev \
-                            libavcodec-dev libavformat-dev libswscale-dev libgstreamer1.0 \
-                            gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
-                            gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
-                            gstreamer1.0-libav libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev \
-                            libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev \
-                            libavcodec-dev libjpeg-dev libfreetype6-dev libmtdev-dev \
-                            libgl1-mesa-dev libgles2-mesa-dev libgstreamer-plugins-base1.0-dev \
-                            libgstreamer1.0-dev xclip xsel libffi-dev libssl-dev
-
-        pip install --upgrade pip
-        pip install cython==0.29.36 virtualenv
+        python3 -m pip install --upgrade pip setuptools wheel
+        pip install Cython virtualenv
         pip install buildozer
 
-    - name: Build APK
+    - name: Initialize buildozer if needed
+      run: |
+        if [ ! -f buildozer.spec ]; then
+          buildozer init
+        fi
+
+    - name: Build the APK
       run: |
         buildozer android debug
 
-    - name: Upload APK Artifact
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: KivyApp-APK
+        name: RobotNavigator.apk
         path: bin/*.apk
