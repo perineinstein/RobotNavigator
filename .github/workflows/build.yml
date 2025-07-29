@@ -2,56 +2,78 @@ name: Build APK with Buildozer
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          libgstreamer1.0-dev \
-          libgstreamer-plugins-base1.0-dev \
-          libffi-dev libssl-dev \
-          libgl1-mesa-dev libgles2-mesa-dev \
-          libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
-          libmtdev-dev libjpeg-dev libfreetype6-dev \
-          libavcodec-dev libavformat-dev libswscale-dev \
-          libusb-dev libhidapi-dev zlib1g-dev \
-          xclip xsel \
-          build-essential autoconf automake cmake pkg-config unzip git
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            python3-pip \
+            libffi-dev \
+            libssl-dev \
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good \
+            gstreamer1.0-plugins-bad \
+            gstreamer1.0-plugins-ugly \
+            gstreamer1.0-libav \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libmtdev-dev \
+            xclip \
+            xsel \
+            libjpeg-dev \
+            zlib1g-dev \
+            libfreetype6-dev \
+            liblcms2-dev \
+            libwebp-dev \
+            libharfbuzz-dev \
+            libfribidi-dev \
+            libxcb1-dev \
+            libegl1-mesa-dev \
+            pkg-config \
+            libgl1-mesa-dev \
+            unzip \
+            openjdk-17-jdk
 
-    - name: Install buildozer and Cython
-      run: |
-        python3 -m pip install --upgrade pip setuptools wheel
-        pip install Cython virtualenv
-        pip install buildozer
+      - name: Install Buildozer
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel Cython virtualenv
+          pip install buildozer
 
-    - name: Initialize buildozer if needed
-      run: |
-        if [ ! -f buildozer.spec ]; then
-          buildozer init
-        fi
+      - name: Initialize Buildozer (if not present)
+        run: |
+          if [ ! -f buildozer.spec ]; then buildozer init; fi
 
-    - name: Build the APK
-      run: |
-        buildozer android debug
+      - name: Accept Android SDK licenses and install tools
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: RobotNavigator.apk
-        path: bin/*.apk
+      - name: Build APK
+        run: |
+          buildozer android debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RobotNavigator-APK
+          path: bin/*.apk
