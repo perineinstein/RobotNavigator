@@ -19,11 +19,13 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y \
             python3-pip \
+            zip unzip \
+            openjdk-17-jdk \
             libffi-dev \
             libssl-dev \
             libgstreamer1.0-dev \
@@ -38,41 +40,24 @@ jobs:
             libsdl2-mixer-dev \
             libsdl2-ttf-dev \
             libmtdev-dev \
-            xclip \
-            xsel \
-            libjpeg-dev \
-            zlib1g-dev \
-            libfreetype6-dev \
-            liblcms2-dev \
-            libwebp-dev \
-            libharfbuzz-dev \
-            libfribidi-dev \
-            libxcb1-dev \
-            libegl1-mesa-dev \
-            pkg-config \
-            libgl1-mesa-dev \
-            unzip \
-            openjdk-17-jdk
+            xclip xsel \
+            libjpeg-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev \
+            libharfbuzz-dev libfribidi-dev libxcb1-dev libegl1-mesa-dev pkg-config \
+            libgl1-mesa-dev
 
       - name: Install Buildozer
         run: |
           python3 -m pip install --upgrade pip setuptools wheel Cython virtualenv
           pip install buildozer
 
-      - name: Initialize Buildozer (if not present)
+      - name: Initialize Buildozer (if not already present)
         run: |
           if [ ! -f buildozer.spec ]; then buildozer init; fi
 
-      - name: Accept Android SDK licenses and install tools
-        run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+      - name: Build the APK
+        run: buildozer android debug
 
-      - name: Build APK
-        run: |
-          buildozer android debug
-
-      - name: Upload APK artifact
+      - name: Upload the APK
         uses: actions/upload-artifact@v4
         with:
           name: RobotNavigator-APK
