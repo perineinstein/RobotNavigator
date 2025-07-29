@@ -18,20 +18,34 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential git zip unzip openjdk-17-jdk python3-pip python3-setuptools
+          sudo apt install -y \
+            build-essential git zip unzip openjdk-17-jdk python3-pip python3-setuptools \
+            libffi-dev libssl-dev libsqlite3-dev zlib1g-dev
+
+      - name: Install Buildozer
+        run: |
           pip install --upgrade pip Cython virtualenv
           pip install buildozer
 
-      - name: Initialize Buildozer
+      - name: Install Android SDK commandline-tools
         run: |
-          buildozer init || true
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk/cmdline-tools
+          curl -Lo tools.zip https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
+          unzip tools.zip
+          mv cmdline-tools latest
+          echo "export ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "export PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+          echo "export PATH=$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
 
-      - name: Accept Android SDK licenses
+      - name: Accept Android licenses and install build-tools
         run: |
-          yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          sdkmanager --sdk_root=$HOME/android-sdk --licenses || true
+          sdkmanager --sdk_root=$HOME/android-sdk \
+            "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
       - name: Build APK
         run: |
